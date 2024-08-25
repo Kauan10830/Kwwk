@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Simples</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #333;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            background-color: #000;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: white;
+            display: none;
+        }
+        #recomecar {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            padding: 10px 20px;
+            background-color: #0095DD;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="gameOver">Game Over!</div>
+<button id="recomecar" onclick="recomecarJogo()">Recomeçar Jogo</button>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const largura = window.innerWidth;
+    const altura = window.innerHeight;
+    canvas.width = largura;
+    canvas.height = altura;
+
+    const plataformaAltura = 15;
+    const plataformaLargura = 100; // Plataforma menor
+    let plataformaX = (canvas.width - plataformaLargura) / 2;
+
+    const bolaRadius = 15;
+    let bolaX;
+    let bolaY;
+    let bolaDX = 3;  // Velocidade horizontal inicial da bola
+    let bolaDY = 3;  // Velocidade vertical inicial da bola
+    const incrementoVelocidade = 0.5; // Quanto a velocidade da bola aumenta após cada colisão
+
+    let setaDireitaPressionada = false;
+    let setaEsquerdaPressionada = false;
+    let jogoAtivo = true;
+
+    // Detecta teclas pressionadas
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+
+    function keyDownHandler(e) {
+        if (e.key === "ArrowRight") {
+            setaDireitaPressionada = true;
+        } else if (e.key === "ArrowLeft") {
+            setaEsquerdaPressionada = true;
+        }
+    }
+
+    function keyUpHandler(e) {
+        if (e.key === "ArrowRight") {
+            setaDireitaPressionada = false;
+        } else if (e.key === "ArrowLeft") {
+            setaEsquerdaPressionada = false;
+        }
+    }
+
+    function desenharPlataforma() {
+        ctx.beginPath();
+        ctx.rect(plataformaX, canvas.height - plataformaAltura - 10, plataformaLargura, plataformaAltura);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function desenharBola() {
+        ctx.beginPath();
+        ctx.arc(bolaX, bolaY, bolaRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#FF4500";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function detectarColisoes() {
+        // Verifica colisão com as paredes laterais
+        if (bolaX + bolaDX > canvas.width - bolaRadius || bolaX + bolaDX < bolaRadius) {
+            bolaDX = -bolaDX;
+        }
+
+        // Verifica colisão com o topo da tela
+        if (bolaY + bolaDY < bolaRadius) {
+            bolaDY = -bolaDY;
+        }
+        // Verifica colisão com a plataforma
+        else if (bolaY + bolaDY > canvas.height - bolaRadius - plataformaAltura - 10) {
+            if (bolaX > plataformaX && bolaX < plataformaX + plataformaLargura) {
+                bolaDY = -bolaDY; // A bola quica na plataforma
+                aumentarVelocidade(); // Aumenta a velocidade da bola
+            } else {
+                jogoAtivo = false;
+                exibirGameOver();
+            }
+        }
+    }
+
+    function aumentarVelocidade() {
+        if (bolaDY > 0) {
+            bolaDY += incrementoVelocidade;  // Aumenta a velocidade para baixo
+        } else {
+            bolaDY -= incrementoVelocidade;  // Aumenta a velocidade para cima (invertido)
+        }
+
+        if (bolaDX > 0) {
+            bolaDX += incrementoVelocidade;  // Aumenta a velocidade para a direita
+        } else {
+            bolaDX -= incrementoVelocidade;  // Aumenta a velocidade para a esquerda (invertido)
+        }
+    }
+
+    function moverPlataforma() {
+        if (setaDireitaPressionada && plataformaX < canvas.width - plataformaLargura) {
+            plataformaX += 7;
+        } else if (setaEsquerdaPressionada && plataformaX > 0) {
+            plataformaX -= 7;
+        }
+    }
+
+    function atualizar() {
+        if (jogoAtivo) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            desenharBola();
+            desenharPlataforma();
+
+            detectarColisoes();
+            moverPlataforma();
+
+            bolaX += bolaDX;
+            bolaY += bolaDY;
+        }
+    }
+
+    function exibirGameOver() {
+        document.getElementById("gameOver").style.display = "block";
+        document.getElementById("recomecar").style.display = "block";
+    }
+
+    function recomecarJogo() {
+        jogoAtivo = true;
+        document.getElementById("gameOver").style.display = "none";
+        document.getElementById("recomecar").style.display = "none";
+        bolaX = canvas.width / 2;
+        bolaY = bolaRadius + 10;  // Começa no topo
+        bolaDX = 3;  // Reseta a velocidade inicial
+        bolaDY = 3;  // Reseta a velocidade inicial
+        plataformaX = (canvas.width - plataformaLargura) / 2;
+    }
+
+    // Inicializa o jogo
+    function iniciarJogo() {
+        bolaX = canvas.width / 2;
+        bolaY = bolaRadius + 10; // Começa no topo
+        setInterval(atualizar, 10);
+    }
+
+    iniciarJogo();
+</script>
+
+</body>
+</html>
